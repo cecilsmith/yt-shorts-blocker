@@ -30,14 +30,22 @@ The add-on is one static stylesheet, `hide-shorts.css`, injected as a
 declarative content script on `*://*.youtube.com/*`. It sets
 `display: none` on the elements that hold Shorts.
 
-- No JavaScript of any kind: no content scripts, no background page, no
-  event pages.
+- No JavaScript of any kind. The manifest declares one `content_scripts`
+  entry, but it carries only a `css` array and no `js` — the package
+  contains no `.js` file at all. There is no background page and no
+  event page.
 - No permissions and no host permissions are requested.
 - No network requests, no storage, no cookies, no telemetry. Declared as
   `data_collection_permissions: { required: ["none"] }`.
 - No build step, no bundler, no minification and no transpilation. The
-  files in the package are the complete, readable source. Nothing is
-  generated.
+  four files in the package — `manifest.json`, `hide-shorts.css`,
+  `icons/icon.svg` and `LICENSE` — are the complete, readable source,
+  byte-for-byte identical to the repository. Nothing is generated,
+  combined or templated.
+- `web-ext` is used in CI, but only to zip the directory and submit it for
+  signing. It does not transform, rewrite or generate any file.
+- CI also produces an `updates.json` for self-distribution. It is published
+  as a release asset and is **not** part of the extension package.
 
 The stylesheet is organised in three commented layers: elements matched by
 tag name, containers matched by the `/shorts/` link they wrap using

@@ -80,6 +80,9 @@ V=1.0.1 && \
 
 The tag must match the version in `manifest.json`, and AMO refuses a version it has already seen — so every release needs a fresh number. The workflow fails early on a mismatch rather than publishing a broken update manifest.
 
+Version notes for each release live in [`CHANGELOG.md`](CHANGELOG.md), and
+[`.github/AMO_REVIEWER_NOTES.md`](.github/AMO_REVIEWER_NOTES.md) holds the reviewer notes — including the fact that **no account is needed to test this add-on**, since YouTube serves Shorts to signed-out visitors.
+
 ### Checking the manifest locally
 
 ```bash

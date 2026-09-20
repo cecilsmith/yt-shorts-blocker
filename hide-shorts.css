@@ -1,0 +1,104 @@
+/*
+ * Shorts Off — hides YouTube Shorts everywhere they are surfaced.
+ *
+ * This file is the entire extension. It is injected declaratively by the
+ * browser before the page paints, so Shorts never flash on screen and no
+ * JavaScript runs on any page you visit.
+ *
+ * MAINTENANCE NOTE: the `:has()` rules are kept in their own blocks on
+ * purpose. A single invalid selector invalidates an entire comma-separated
+ * list, so mixing a `:has()` selector into the layer-1 lists below would
+ * silently disable those rules on browsers without `:has()` support
+ * (pre-121 Firefox). Keep the two layers separate when editing.
+ */
+
+/* ------------------------------------------------------------------ *
+ * Layer 1 — elements that only ever contain Shorts.
+ * Matched by tag name, so these work on every Firefox version.
+ * ------------------------------------------------------------------ */
+
+/* Shorts shelves in the home feed, subscriptions and search results. */
+ytd-reel-shelf-renderer,
+ytm-reel-shelf-renderer,
+ytd-rich-shelf-renderer[is-shorts] {
+  display: none !important;
+}
+
+/* Individual Shorts cards in the newer view-model UI. */
+ytm-shorts-lockup-view-model,
+ytm-shorts-lockup-view-model-v2,
+ytd-reel-item-renderer {
+  display: none !important;
+}
+
+/* The Shorts tab on a channel page. Keyed to the English tab label, so on
+   other locales the tab simply stays put rather than hiding the wrong one. */
+yt-tab-shape[tab-title="Shorts"] {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * Layer 2 — containers identified by the link they wrap.
+ *
+ * Anchoring on the href rather than on a renderer name means these keep
+ * working when YouTube renames its custom elements, which it does often.
+ * Every selector here targets a single card or a single shelf section —
+ * never a wrapper that also holds non-Shorts results, which would blank
+ * out a whole page.
+ *
+ * Requires :has() — Firefox 121+. Older builds keep layer 1 only.
+ * ------------------------------------------------------------------ */
+
+/* Home / subscriptions grid items and shelf sections. The section rule also
+   collapses the wrapper left behind by the layer-1 shelf rule above. */
+ytd-rich-item-renderer:has(> #content a[href^="/shorts/"]),
+ytd-rich-item-renderer:has(> #content ytm-shorts-lockup-view-model),
+ytd-rich-section-renderer:has(a[href^="/shorts/"]),
+ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]) {
+  display: none !important;
+}
+
+/* Search results, channel grids and watch-page sidebar suggestions. */
+ytd-video-renderer:has(a[href^="/shorts/"]),
+ytd-grid-video-renderer:has(a[href^="/shorts/"]),
+ytd-compact-video-renderer:has(a[href^="/shorts/"]),
+yt-lockup-view-model:has(a[href^="/shorts/"]) {
+  display: none !important;
+}
+
+/* Mobile (m.youtube.com) result rows. */
+ytm-video-with-context-renderer:has(a[href^="/shorts/"]),
+ytm-media-item:has(a[href^="/shorts/"]) {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * Layer 3 — navigation entry points.
+ *
+ * Delete this block if you would rather keep the Shorts button and only
+ * clean up the feeds.
+ * ------------------------------------------------------------------ */
+
+/* Collapsed (mini) sidebar. This entry does carry a real link. */
+ytd-mini-guide-entry-renderer:has(a[href^="/shorts"]) {
+  display: none !important;
+}
+
+/* Expanded sidebar. Its Shorts entry has NO href — the anchor is a
+   role="link" with only a title attribute — so it has to be matched on the
+   label. The href form is kept alongside in case YouTube restores it.
+
+   This is the one rule that depends on the interface language. YouTube
+   leaves "Shorts" untranslated in most locales, the same way it does with
+   product names, but if yours localises it, change the title below to the
+   label your sidebar shows. */
+ytd-guide-entry-renderer:has(> a[title="Shorts"]),
+ytd-guide-entry-renderer:has(> a[href^="/shorts"]) {
+  display: none !important;
+}
+
+/* Mobile bottom navigation bar. */
+ytm-pivot-bar-item-renderer:has(a[href^="/shorts"]),
+ytm-pivot-bar-item-renderer:has(> .pivot-shorts) {
+  display: none !important;
+}

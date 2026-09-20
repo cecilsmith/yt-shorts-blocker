@@ -60,6 +60,8 @@ Two things make that work, and they are easy to confuse:
 - `browser_specific_settings.gecko.id` is only a **name**. It looks like an address but is never fetched, and pointing it at a domain does nothing beyond avoiding collisions with other add-ons. Once people have installed the extension, **never change it** — Firefox treats a new id as a different add-on, and everyone would have to reinstall by hand.
 - `browser_specific_settings.gecko.update_url` is what actually drives updates. It points at `updates.json` on the latest GitHub release, which lists the current version, the `.xpi` to fetch and a SHA-256 that Firefox verifies before applying.
 
+The manifest also declares `data_collection_permissions: { required: ["none"] }`. AMO has required that field on new submissions since 3 November 2025, and `none` is the honest answer here — the add-on is a stylesheet, with no scripts, no network access and no storage, so there is nothing to collect. Firefox 140+ surfaces this on the install prompt.
+
 **Signing is not optional.** Firefox will not install an unsigned `.xpi`, even one you host yourself, so every release goes to Mozilla to be signed. Submitting to the **unlisted** channel avoids a public listing and human review — it is an automated validation pass, usually a minute or two — and hands back a signed file you host here.
 
 ### Cutting a release
@@ -74,9 +76,19 @@ V=1.0.1 && \
   git commit -am "v$V" && git tag "v$V" && git push origin main "v$V"
 ```
 
-[`.github/workflows/release.yml`](.github/workflows/release.yml) then checks the tag against `manifest.json`, signs the add-on, generates `updates.json`, and publishes both as release assets. Installed copies pick the new version up on their next check.
+[`.github/workflows/release.yml`](.github/workflows/release.yml) then checks the tag against `manifest.json`, lints, signs the add-on, generates `updates.json`, and publishes both as release assets. Installed copies pick the new version up on their next check.
 
 The tag must match the version in `manifest.json`, and AMO refuses a version it has already seen — so every release needs a fresh number. The workflow fails early on a mismatch rather than publishing a broken update manifest.
+
+### Checking the manifest locally
+
+```bash
+npx --yes web-ext@latest lint --self-hosted --source-dir=. --ignore-files ".github/**" "dist/**" "*.md"
+```
+
+`--self-hosted` matters: without it the linter reports `update_url` as an error, because that restriction applies only to add-ons hosted **on** addons.mozilla.org. This one is signed there but hosted here, so the field is allowed. The same flag is used in CI.
+
+Two warnings are expected and harmless — `strict_min_version` is below the versions that introduced `data_collection_permissions` (Firefox 140, Android 142). Older releases simply ignore the key.
 
 ### Building the zip by hand
 

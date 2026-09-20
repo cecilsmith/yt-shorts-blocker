@@ -34,6 +34,17 @@ jobs:
             exit 1
           fi
 
+      # Catches manifest errors here rather than after a failed AMO upload.
+      # --self-hosted suppresses the "update_url is not allowed" error, which
+      # only applies to Mozilla-hosted (listed) add-ons, not self-distributed
+      # ones like this.
+      - name: Lint
+        run: |
+          npx --yes web-ext@latest lint \
+            --self-hosted \
+            --source-dir=. \
+            --ignore-files ".github/**" "dist/**" "*.md"
+
       - name: Sign with AMO
         env:
           AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}

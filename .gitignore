@@ -1,0 +1,5 @@
+# Build and signing output
+dist/
+web-ext-artifacts/
+*.zip
+*.xpi

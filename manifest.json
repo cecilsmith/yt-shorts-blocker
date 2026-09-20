@@ -5,7 +5,8 @@
   "description": "Removes YouTube Shorts from your feeds, search results and sidebar. Pure CSS, no scripts, no permissions.",
   "browser_specific_settings": {
     "gecko": {
-      "id": "shorts-off@nathanaelsmith.github.io",
+      "id": "shorts-off@cecilsmith.github.io",
+      "update_url": "https://github.com/cecilsmith/yt-shorts-blocker/releases/latest/download/updates.json",
       "strict_min_version": "109.0"
     },
     "gecko_android": {
@@ -18,8 +19,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/*"],
-      "css": ["hide-shorts.css"],
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "css": [
+        "hide-shorts.css"
+      ],
       "all_frames": false
     }
   ]

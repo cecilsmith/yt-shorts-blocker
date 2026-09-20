@@ -47,13 +47,38 @@ The collapsed sidebar button does carry a real link, so it is matched by href an
 
 **To keep it installed**, release Firefox requires extensions to be signed, so pick one of:
 
-- **Sign it yourself.** Submit the zip to [addons.mozilla.org](https://addons.mozilla.org/developers/) as an unlisted add-on. You get a signed `.xpi` back to install and keep, without publishing it.
+- **Install a signed build from Releases** — see below. Recommended: it auto-updates.
 - **Turn signing off.** Only works on Firefox Developer Edition, Nightly and ESR: set `xpinstall.signatures.required` to `false` in `about:config`.
 - **Use a derivative that allows unsigned add-ons.** LibreWolf and Waterfox both do.
 
-Before submitting to AMO, change the `id` under `browser_specific_settings.gecko` in `manifest.json` to a domain you control.
+## Automatic updates
 
-To build the zip:
+Install the `.xpi` from the [latest release](https://github.com/cecilsmith/yt-shorts-blocker/releases/latest) once, and Firefox keeps it up to date from this repo on its own — it checks roughly once a day.
+
+Two things make that work, and they are easy to confuse:
+
+- `browser_specific_settings.gecko.id` is only a **name**. It looks like an address but is never fetched, and pointing it at a domain does nothing beyond avoiding collisions with other add-ons. Once people have installed the extension, **never change it** — Firefox treats a new id as a different add-on, and everyone would have to reinstall by hand.
+- `browser_specific_settings.gecko.update_url` is what actually drives updates. It points at `updates.json` on the latest GitHub release, which lists the current version, the `.xpi` to fetch and a SHA-256 that Firefox verifies before applying.
+
+**Signing is not optional.** Firefox will not install an unsigned `.xpi`, even one you host yourself, so every release goes to Mozilla to be signed. Submitting to the **unlisted** channel avoids a public listing and human review — it is an automated validation pass, usually a minute or two — and hands back a signed file you host here.
+
+### Cutting a release
+
+One-time setup: generate API credentials at [AMO → Manage API Keys](https://addons.mozilla.org/developers/addon/api/key/), then add them to this repo under *Settings → Secrets and variables → Actions* as `AMO_JWT_ISSUER` and `AMO_JWT_SECRET`.
+
+After that, each release is a version bump and a tag:
+
+```bash
+V=1.0.1 && \
+  node -e 'const f="manifest.json",m=require("./"+f);m.version=process.argv[1];require("fs").writeFileSync(f,JSON.stringify(m,null,2)+"\n")' "$V" && \
+  git commit -am "v$V" && git tag "v$V" && git push origin main "v$V"
+```
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) then checks the tag against `manifest.json`, signs the add-on, generates `updates.json`, and publishes both as release assets. Installed copies pick the new version up on their next check.
+
+The tag must match the version in `manifest.json`, and AMO refuses a version it has already seen — so every release needs a fresh number. The workflow fails early on a mismatch rather than publishing a broken update manifest.
+
+### Building the zip by hand
 
 ```bash
 zip -r -FS shorts-off.zip manifest.json hide-shorts.css icons

@@ -47,7 +47,7 @@ declarative content script on `*://*.youtube.com/*`. It sets
 - CI also produces an `updates.json` for self-distribution. It is published
   as a release asset and is **not** part of the extension package.
 
-The stylesheet is organised in three commented layers: elements matched by
+The stylesheet is organized in three commented layers: elements matched by
 tag name, containers matched by the `/shorts/` link they wrap using
 `:has()`, and the navigation entries. Selectors deliberately target
 individual cards and dedicated Shorts shelves only, never a wrapper that

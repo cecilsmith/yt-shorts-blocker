@@ -10,7 +10,7 @@ Most Shorts blockers poll the DOM with a `MutationObserver` and delete nodes aft
 
 The browser injects a declarative content stylesheet before the page paints, so Shorts are never rendered in the first place. The runtime cost is whatever the style engine spends matching a few dozen selectors — effectively nothing — and it keeps working while the tab is in the background without any script running.
 
-The trade-off is that there is no on/off toggle: a settings UI would mean a script, storage and a popup. To customise it, edit `hide-shorts.css` and reload the extension. Each block is labelled, and the navigation block at the bottom can be deleted on its own if you want to keep the Shorts button in the sidebar.
+The trade-off is that there is no on/off toggle: a settings UI would mean a script, storage and a popup. To customize it, edit `hide-shorts.css` and reload the extension. Each block is labelled, and the navigation block at the bottom can be deleted on its own if you want to keep the Shorts button in the sidebar.
 
 ## What it hides
 
@@ -33,7 +33,7 @@ Layer 1 works on Firefox 109+. Layer 2 needs `:has()`, which landed in **Firefox
 
 Works the same on Firefox derivatives — LibreWolf, Waterfox, Zen, Floorp, Mullvad Browser — and on Firefox for Android 120+, including Mull and IronFox. The stylesheet covers `m.youtube.com` as well as the desktop site.
 
-Two rules depend on the interface language, because the elements give nothing else to grab: the channel **Shorts tab** and the **expanded sidebar's Shorts button**. That sidebar entry is the odd one out — unlike every other nav item it has no `href` at all, just a `title`, so the label is the only available hook. YouTube leaves "Shorts" untranslated in most locales the way it does with product names, but if yours localises it, change the two `"Shorts"` strings in `hide-shorts.css` to the label you see. Everything else is language-independent.
+Two rules depend on the interface language, because the elements give nothing else to grab: the channel **Shorts tab** and the **expanded sidebar's Shorts button**. That sidebar entry is the odd one out — unlike every other nav item it has no `href` at all, just a `title`, so the label is the only available hook. YouTube leaves "Shorts" untranslated in most locales the way it does with product names, but if yours localizes it, change the two `"Shorts"` strings in `hide-shorts.css` to the label you see. Everything else is language-independent.
 
 The collapsed sidebar button does carry a real link, so it is matched by href and works in every language.
 

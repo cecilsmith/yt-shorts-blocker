@@ -24,15 +24,19 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Check manifest version matches the tag
+      # manifest.json is the single source of truth for the version, so a
+      # manual re-run (workflow_dispatch) works without a tag present.
+      - name: Resolve version
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          MANIFEST=$(node -p "require('./manifest.json').version")
-          echo "tag=$TAG manifest=$MANIFEST"
-          if [ "$TAG" != "$MANIFEST" ]; then
-            echo "::error::Tag v$TAG does not match manifest.json version $MANIFEST"
+          VERSION=$(node -p "require('./manifest.json').version")
+          TAG="v$VERSION"
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "$TAG" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest.json version $VERSION (expected $TAG)"
             exit 1
           fi
+          echo "Releasing $TAG"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       # Catches manifest errors here rather than after a failed AMO upload.
       # --self-hosted suppresses the "update_url is not allowed" error, which
@@ -50,24 +54,46 @@ jobs:
           AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
           AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
         run: |
+          # Strip stray whitespace. A credential pasted with a leading or
+          # trailing space still masks as *** in the log, but signs the JWT
+          # with the wrong string and AMO rejects it with the unhelpful
+          # "Error decoding signature". Neither value contains whitespace
+          # legitimately, so this is always safe.
+          ISSUER="$(printf '%s' "$AMO_JWT_ISSUER" | tr -d '[:space:]')"
+          SECRET="$(printf '%s' "$AMO_JWT_SECRET" | tr -d '[:space:]')"
+
+          if [ -z "$ISSUER" ] || [ -z "$SECRET" ]; then
+            echo "::error::AMO_JWT_ISSUER or AMO_JWT_SECRET is empty. Add both under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          # Shape check. Prints lengths only, never the values themselves.
+          echo "issuer: ${#ISSUER} chars; secret: ${#SECRET} chars"
+          case "$ISSUER" in
+            user:*) ;;
+            *) echo "::error::AMO_JWT_ISSUER should look like 'user:12345678:123'. It may be swapped with the secret." ; exit 1 ;;
+          esac
+          if [ "${#SECRET}" -ne 64 ]; then
+            echo "::warning::AMO_JWT_SECRET is ${#SECRET} chars; AMO secrets are normally 64 hex characters. Check for a truncated or swapped paste."
+          fi
+
           npx --yes web-ext@latest sign \
             --channel=unlisted \
-            --api-key="$AMO_JWT_ISSUER" \
-            --api-secret="$AMO_JWT_SECRET" \
+            --api-key="$ISSUER" \
+            --api-secret="$SECRET" \
             --source-dir=. \
             --artifacts-dir=dist \
             --ignore-files ".github/**" "dist/**" "README.md" "*.md"
 
       - name: Build the update manifest
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           XPI=$(ls dist/*.xpi | head -n1)
           echo "Signed artifact: $XPI"
 
           # Firefox verifies this hash before applying an update.
           HASH="sha256:$(sha256sum "$XPI" | cut -d' ' -f1)"
           ID=$(node -p "require('./manifest.json').browser_specific_settings.gecko.id")
-          LINK="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$XPI")"
+          LINK="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/$(basename "$XPI")"
 
           node -e '
             const [id, version, link, hash] = process.argv.slice(1);
@@ -81,7 +107,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --title "$GITHUB_REF_NAME" \
+          gh release create "$TAG" \
+            --title "$TAG" \
             --generate-notes \
             dist/*.xpi dist/updates.json
